@@ -102,19 +102,39 @@ void APPLICATION_deactivate_red_led(void)
     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_14, GPIO_PIN_RESET);
 }
 
+void APPLICATION_enable_button_interrupts(void)
+{
+	HAL_NVIC_EnableIRQ(BUTTON_IRQ_NUMBER);
+}
+
+// Exception handlers
+
 void HAL_SYSTICK_Callback(void)
 {
-    ms_passed ++; // Called every one millisecond (systick interrupt) 
 
-    if(ms_passed % 100 == 0)
+#if INTERRUPT_MODE == 1
+    ms_passed ++; // Called every one millisecond (systick interrupt)
+
+    if(ms_passed == 99)
     {
         ms_passed = 0;
 
         // Sample button/gyro rotation
-        APPLICATION_sample_button();
         APPLICATION_get_gyro_rotation_rate();
 
         // Update LED states
         APPLICATION_update_led();
     }
+#endif
+}
+
+void EXTI0_IRQHandler()
+{
+	HAL_NVIC_DisableIRQ(BUTTON_IRQ_NUMBER);
+
+	APPLICATION_sample_button();
+
+	HAL_NVIC_ClearPendingIRQ(BUTTON_IRQ_NUMBER);
+	HAL_NVIC_EnableIRQ(BUTTON_IRQ_NUMBER);
+
 }

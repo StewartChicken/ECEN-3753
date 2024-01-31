@@ -91,6 +91,10 @@ int main(void)
   MX_SPI5_Init();
   /* USER CODE BEGIN 2 */
   Gyro_Init();
+
+#if INTERRUPT_MODE == 1
+  APPLICATION_enable_button_interrupts();
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -98,7 +102,7 @@ int main(void)
   while (1)
   {
     
-    #if !(LAB2_USE_INTERRUPT)
+    #if INTERUPT_MODE == 0
     // Sample button and gyro
     APPLICATION_sample_button();
     APPLICATION_get_gyro_rotation_rate();
@@ -109,6 +113,11 @@ int main(void)
     // Delay 100 ms
     HAL_Delay(100);
     #endif
+
+	#if INTERRUPT_MODE == 1
+    	HAL_PWR_EnterSLEEPMode(0);
+	#endif
+
   }
 }
 

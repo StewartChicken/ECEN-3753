@@ -30,6 +30,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
+#include "Application.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -48,7 +49,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define LAB2_USE_INTERRUPT 0
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

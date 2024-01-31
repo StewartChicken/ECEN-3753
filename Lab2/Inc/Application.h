@@ -6,13 +6,18 @@
 #include "stm32f4xx_hal.h"
 #include "Gyro_Driver.h"
 
+#define INTERRUPT_MODE 1
+
+
 #define BUTTON_NOT_PRESSED 0
 #define BUTTON_PRESSED 1
 
-uint8_t button_state; // 0 if not pressed, 1 if pressed
-uint8_t gyro_rotation; // 0-4 - defined in GyroRotationRates enum
+#define BUTTON_IRQ_NUMBER 6
 
-static uint8_t ms_passed; // Counts the number of milliseconds that have passed since reset
+[[maybe_unused]] static uint8_t button_state; // 0 if not pressed, 1 if pressed
+[[maybe_unused]] static uint8_t gyro_rotation; // 0-4 - defined in GyroRotationRates enum
+
+[[maybe_unused]] static uint8_t ms_passed; // Counts the number of milliseconds that have passed since reset
 
 typedef enum {
     GYRO_FAST_CW_ROTATION = 0, // Clock-wise fast rotation - negative gyro values
@@ -40,5 +45,7 @@ void APPLICATION_activate_green_led(void);
 void APPLICATION_activate_red_led(void);
 void APPLICATION_deactivate_green_led(void);
 void APPLICATION_deactivate_red_led(void);
+
+void APPLICATION_enable_button_interrupts(void);
 
 #endif
