@@ -134,7 +134,12 @@ void EXTI0_IRQHandler()
 
 	APPLICATION_sample_button();
 
-	HAL_NVIC_ClearPendingIRQ(BUTTON_IRQ_NUMBER);
+	// Clear button's pending interrupt
+    EXTI_HandleTypeDef button;
+    button.Line = 0;
+
+    HAL_EXTI_ClearPending(&button, EXTI_TRIGGER_RISING_FALLING);
+
 	HAL_NVIC_EnableIRQ(BUTTON_IRQ_NUMBER);
 
 }

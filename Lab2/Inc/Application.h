@@ -6,7 +6,7 @@
 #include "stm32f4xx_hal.h"
 #include "Gyro_Driver.h"
 
-#define INTERRUPT_MODE 1
+#define INTERRUPT_MODE 1    
 
 
 #define BUTTON_NOT_PRESSED 0

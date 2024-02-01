@@ -102,7 +102,7 @@ int main(void)
   while (1)
   {
     
-    #if INTERUPT_MODE == 0
+    #if INTERRUPT_MODE == 0
     // Sample button and gyro
     APPLICATION_sample_button();
     APPLICATION_get_gyro_rotation_rate();
@@ -115,7 +115,7 @@ int main(void)
     #endif
 
 	#if INTERRUPT_MODE == 1
-    	HAL_PWR_EnterSLEEPMode(0);
+    	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 	#endif
 
   }
