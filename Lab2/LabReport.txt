@@ -1,0 +1,43 @@
+IDE setup 
+My Debugger is utin the ST-LINK (OpenOCD) Debug Probe. 
+Under the startup tap in the debug configurations, I have input the initialization commands 
+
+	monitor arm semihosting enable
+
+as was practiced in ECEN 2370.
+
+I am also using the "rdimon" library for the MCU GCC Linker and have have used the flag 
+
+	-specs=rdimon.specs
+
+under the miscellaneous tab for the linker. 
+
+
+Test 1:
+
+When the board is reset, neither of the LEDs are lit. This is consistent for the functionality in both part I and part II,
+and is to be expected since neither criteria for LED activation condition are met. 
+
+Test 2:
+
+When the button is pressed, both LEDs light up. This is true for both parts. Since the green LED lights up if the board
+is rotating counter-clockwise *or* if the button is pressed, it is expected to be on for this test. The red LED should light
+up if both the button is pressed and the board is rotating clockwise. Since zero rotation has been counted as a clockwise
+rotation for this lab, the red LED should also light up. When the button is released, both LED's turn off. This is
+expected because the conditions for LED activation should not be met. 
+
+Test 3:
+
+For both parts I and II, pressing the button and rotating clockwise lights both LEDs. The necessary criteria for the green
+led to light up, ie button press, are true so it lights up. The necessary criteria for the red led to light up, ie button
+press *and* clockwise rotation is true so the red led lights up. When the button is released, these criteria are not met
+and neither led lights up. 
+
+Test 4:
+
+For both tests, rotating the button counter-clockwise only lights the green LED. Since the board needs to be rotating
+clockwise for the red LED to be lit, it stays off. The green LED turns on if the board is rotating counter clockwise *or*
+if the button is pressed, thus, it remains on for both the pressing and releasing of the button. 
+
+Test 5:
+
