@@ -41,3 +41,15 @@ if the button is pressed, thus, it remains on for both the pressing and releasin
 
 Test 5:
 
+The Board was tested by rotating the LED clockwise and not pressing the user button. Both LEDs
+stayed off which was expected since the green LED only turns on if the board is rotating counter
+clockwise or if the button is pressed and the red led must have the button pressed and clockwise rotation to be on. The button was then pressed while the board was rotating and it
+was observed that both LEDs turned on. This is because the criteria for their activation
+was met: the board was rotating clockwise and the button was pressed.
+
+Test 6:
+
+The board was rotated counter-clockwise and the button was left unpressed. Only the green LED turned on. This was expected because the green LED only needs the board to be rotating in this direction to activate. The red led, on the other hand, requires clockwise rotation to activate. The button was then pressed while the board was still rotating. The green LED stayed on and the red LED remained off since the board was still rotating counter-clockwise. 
+
+
+
