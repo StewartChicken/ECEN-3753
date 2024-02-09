@@ -49,7 +49,11 @@ was met: the board was rotating clockwise and the button was pressed.
 
 Test 6:
 
-The board was rotated counter-clockwise and the button was left unpressed. Only the green LED turned on. This was expected because the green LED only needs the board to be rotating in this direction to activate. The red led, on the other hand, requires clockwise rotation to activate. The button was then pressed while the board was still rotating. The green LED stayed on and the red LED remained off since the board was still rotating counter-clockwise. 
+The board was rotated counter-clockwise and the button was left unpressed. Only the green LED turned on. This was expected because the green LED only needs the board to be rotating 
+in this direction to activate. The red led, on the other hand, requires clockwise rotation to activate. The button was then pressed while the board was still rotating. The green LED 
+stayed on and the red LED remained off since the board was still rotating counter-clockwise. 
+
+
 
 
 
