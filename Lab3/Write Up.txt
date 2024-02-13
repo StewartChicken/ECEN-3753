@@ -1,0 +1,36 @@
+IDE setup 
+My Debugger is utin the ST-LINK (OpenOCD) Debug Probe. 
+Under the startup tap in the debug configurations, I have input the initialization commands 
+
+	monitor arm semihosting enable
+
+as was practiced in ECEN 2370.
+
+I am also using the "rdimon" library for the MCU GCC Linker and have have used the flag 
+
+	-specs=rdimon.specs
+
+under the miscellaneous tab for the linker. 
+
+If the function took a really long time to do its work, other processes may not get access to resources
+they need to complete their tasks. It could lead to a system wide resource shortage.
+
+If the Gyro was not ready with a new sample of data, the gyro would return old, garbage data to the STM32.
+
+I could not get the task duty cycle working properly. After following the steps on slack, the run time percentage was 
+only reading N/A. I estimate that a vast majority of the program's time is spent outside my my task's code because
+the OS is handling many, many other things at once. I wouldn't be surprised if less than one percent was spent within
+my code. 
+
+The random place I stopped did not correspond to my code. After stopping it randomly a few more times, I observed
+the same result. This is consistent with the estimation I made previously since it seems the program spends most
+of its life time doing other things (not my code).
+
+With a breakpoint at the start of the update function, the application seemingly immediately pauses execution at the entry
+to that function. When execution is continued, the program, again, stops immediately at the breakpoint. This is expected
+to be different because the program is running this function every 100ms which, when using breakpoints to observe
+how frequently this function is entered, will seem like 100 percent of the time to the developer. 
+
+We don't have to worry about a really long time to update in part c because the RTOS is ensuring that the resources
+to run this function, and other operations, are allocated properly. 
+
