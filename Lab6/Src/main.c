@@ -104,7 +104,7 @@ int main(void)
   MX_SPI5_Init();
   MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
-
+  Gyro_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */
