@@ -304,6 +304,32 @@ void LCD_Draw_Vertical_Line(uint16_t x, uint16_t y, uint16_t len, uint16_t color
   }
 }
 
+/**
+ * Draws a line between two points using Bresenham's algorithm.
+ * 
+ * @param x0 The x-coordinate of the first point.
+ * @param y0 The y-coordinate of the first point.
+ * @param x1 The x-coordinate of the second point.
+ * @param y1 The y-coordinate of the second point.
+ * @param color The color of the line.
+ * 
+ * @remarks Implementation based on Bresenham's Line Algorithm by Jack E. Bresenham.
+ */
+void LCD_Draw_Line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
+{
+  int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+  int err = dx + dy, e2; /* error value e_xy */
+ 
+  for (;;){  /* loop */
+    LCD_Draw_Pixel(x0, y0, color);
+    if (x0 == x1 && y0 == y1) break;
+    e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+  }
+}
+
 void LCD_Clear(uint8_t LayerIndex, uint16_t Color)
 {
   if (LayerIndex == 0){

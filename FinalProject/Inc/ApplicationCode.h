@@ -8,10 +8,23 @@
 #ifndef INC_APPLICATIONCODE_H_
 #define INC_APPLICATIONCODE_H_
 
+#include <stdlib.h>
+#include <math.h>
+#include <stdbool.h>
 #include "LCD_Driver.h"
 #include "Gyro_Driver.h"
+#include "RNG.h"
 #include "cmsis_os.h"
- 
+#include "Config.h"
+
+
+//************************************************************************************************
+// Config
+
+#define GAME_UPDATE_FREQUENCY 50 // Update every 50 ms
+
+//************************************************************************************************
+
 // Possible button states
 #define BUTTON_NOT_PRESSED 0
 #define BUTTON_PRESSED 1
@@ -20,17 +33,12 @@
 #define BUTTON_IRQ_NUMBER 6
 #define EXTI0_DEFAULT_PRIORITY 13
 
-#define INITIAL_BOARD_ANGLE 180 // Board is initially assumed to be at 180 degrees or flat
+// Board is initially assumed to be at 180 degrees or flat
+#define INITIAL_BOARD_ANGLE 180 
 
-#define DISRUPTOR_ENERGY_DEPLETION_RATE 1 			// How much the disruptor's energy level decrements by
-#define DISRUPTOR_ENERGY_DEPLETION_INTERVAL 30 	// How often energy depletes while button is being pressed
-#define DISRUPTOR_ENERGY_RECHARGE_RATE 1 			// How much the disruptor's energy level increments by
-#define DISRUPTOR_ENERGY_RECHARGE_INTERVAL 200		// How often the energy increments while recharging
-
-#define DISRUPTOR_MIN_ACTIVATION_ENERGY 30      // Disruptor can be used after it is charged to at least 30 percent
-
-#define DISRUPTOR_ENERGY_DEPLETE_EVENT 		0x1 // 0b00000001
-#define DISRUPTOR_ENERGY_RECHARGE_EVENT 	0x2 // 0b00000010
+// Energy event flag masks
+#define DEPLETE_ENERGY_EVENT 		0x1 // 0b00000001
+#define RECHARGE_ENERGY_EVENT   	0x2 // 0b00000010
 
 // LED event flags
 #define ENABLE_RED_LED_EVENT           0x0001
@@ -38,29 +46,88 @@
 #define ENABLE_GREEN_LED_EVENT         0x0004
 #define DISABLE_GREEN_LED_EVENT        0x0008
 
-#define GYRO_SAMPLE_RATE 20 // Sample gyro at 1 ms frequency
+#define GYRO_SAMPLE_RATE 20 // Sample gyro every 20 ms
 #define LCD_UPDATE_RATE  100 // Update LCD screen every 100 ms
+
+enum PinAtCenter {
+    DRONE,
+    MAZE
+};
+
+
+// This data structure will be used to represent holes within the game
+// Collision detection will use this data
+[[maybe_unused]] typedef struct {
+    uint16_t x; // X position of hole center
+    uint32_t y; // Y position of hole center
+} HoleData_t;
+
+// This data structure will be used to represent waypoints within the game
+// Collision detection will use this data
+// Waypoints are numbered incrementally starting from 0 (start)
+[[maybe_unused]] typedef struct {
+    int16_t x;         // X position of hole center
+    int16_t y;         // Y position of hole center
+    uint8_t number;    // Index of this waypoint 
+    bool reached;         // True if this waypoint has been reached previously - false initially
+} WaypointData_t;
+
+/* Data structure for a cell - for now, it is assumed that the map cell count is always 6 - can change later
+ * The rightmost five bits contain the map data 
+ * 0b00000001  - Top wall
+ * 0b00000010  - Bottom wall
+ * 0b00000100  - Left wall 
+ * 0b00001000  - Right wall
+ * 0b00010000  - Hole
+ * 0b00100000  - Waypoint
+*/ 
+//[[maybe_unused]] static uint8_t **cell_data; // 2D Array of 8-bit integers used for map generation
+[[maybe_unused]] static uint8_t cell_data[6][6];
+
+[[maybe_unused]] static HoleData_t *hole_data; // Dynamic array of holes that are generated within the map
+[[maybe_unused]] static uint8_t num_holes;
+
+[[maybe_unused]] static WaypointData_t waypoint_data[4]; // Dynamic array of waypoints that are generated within the map
+[[maybe_unused]] static uint8_t current_waypoint; // The current waypoint the player must reach
 
 [[maybe_unused]] static uint8_t green_led_state; // 0 if off, 1 if on
 [[maybe_unused]] static uint8_t red_led_state; // 0 if off, 1 if on
 
-[[maybe_unused]] static uint8_t button_state; // 0 if not pressed, 1 if pressed
-
-[[maybe_unused]] static uint8_t disruptor_energy_level; // 0-100 percent
-[[maybe_unused]] static uint8_t disruptor_depleting; 	// 0 if recharging, 1 if depleting
-
 [[maybe_unused]] static uint8_t green_led_timer_tick; // Counts from 0 to 10 - used for duty cycle of green led
 
-// Gyroscope data
-[[maybe_unused]] static int16_t gyro_velocity_x;
-[[maybe_unused]] static int16_t gyro_velocity_y;
+// Gyro data
 [[maybe_unused]] static int16_t gyro_angle_x = INITIAL_BOARD_ANGLE;
 [[maybe_unused]] static int16_t gyro_angle_y = INITIAL_BOARD_ANGLE;
 
+[[maybe_unused]] static uint32_t red_led_timer_tick; 
+[[maybe_unused]] static uint32_t red_led_timer_period; // Rate the red led flashes
 
-// =================================================================================================
-/* Thread instantiation */
-// 
+[[maybe_unused]] static uint8_t button_state; // 0 if not pressed, 1 if pressed
+
+[[maybe_unused]] static uint8_t disruptor_active; // 0 if off, 1 if on
+[[maybe_unused]] static uint8_t disruptor_can_be_activated = 1; // 0 if disruptor cannot be activated, 1 if it can be activated
+
+[[maybe_unused]] static int32_t drone_energy; // Range from 0 to 15000 mJ
+[[maybe_unused]] static int32_t drone_position_x, drone_position_y; // Pixel value 
+[[maybe_unused]] static int32_t drone_velocity_x, drone_velocity_y; // Pixel value 
+
+[[maybe_unused]] static uint8_t cellRow;
+[[maybe_unused]] static uint8_t cellCol;
+
+[[maybe_unused]] static bool game_won = false;
+[[maybe_unused]] static bool game_lost = false;
+[[maybe_unused]] static bool fell_into_hole = false;
+[[maybe_unused]] static bool ran_out_of_time = false;
+[[maybe_unused]] static bool exceeded_tilt = false;
+
+[[maybe_unused]] static uint32_t game_tick;
+
+// LCD display task
+[[maybe_unused]] static osThreadId_t lcd_display_task;
+[[maybe_unused]] static const osThreadAttr_t lcd_display_task_attributes = {
+    .name = "lcd_display_task",
+    .priority = osPriorityNormal
+};
 
 // Disruptor task
 [[maybe_unused]] static osThreadId_t disruptor_task;
@@ -76,10 +143,10 @@
     .priority = osPriorityNormal
 };
 
-// LCD display task
-[[maybe_unused]] static osThreadId_t lcd_display_task;
-[[maybe_unused]] static const osThreadAttr_t lcd_display_task_attributes = {
-    .name = "lcd_display_task",
+// Gyro angle task
+[[maybe_unused]] static osThreadId_t gyro_angle_task;
+[[maybe_unused]] static const osThreadAttr_t gyro_angle_task_attributes = {
+    .name = "gyro_angle_task",
     .priority = osPriorityNormal
 };
 
@@ -90,23 +157,23 @@
     .priority = osPriorityNormal
 };
 
-// Gyro angle task
-[[maybe_unused]] static osThreadId_t gyro_angle_task;
-[[maybe_unused]] static const osThreadAttr_t gyro_angle_task_attributes = {
-    .name = "gyro_angle_task",
+// Game task
+[[maybe_unused]] static osThreadId_t game_task;
+[[maybe_unused]] static const osThreadAttr_t game_task_attributes = {
+    .name = "game_task",
     .priority = osPriorityNormal
 };
 
-// Disruptor energy depletion timer
-[[maybe_unused]] static osTimerId_t depletion_timer;
-[[maybe_unused]] static const osTimerAttr_t depletion_timer_attributes = {
-    .name = "depletion_timer"
+// Energy recharge timer
+[[maybe_unused]] static osTimerId_t energy_recharge_timer;
+[[maybe_unused]] static const osTimerAttr_t energy_recharge_timer_attributes = {
+    .name = "energy_recharge_timer"
 };
 
-// Disruptor energy recharge timer
-[[maybe_unused]] static osTimerId_t recharge_timer;
-[[maybe_unused]] static const osTimerAttr_t recharge_timer_attributes = {
-    .name = "recharge_timer"
+// Energy depletion timer
+[[maybe_unused]] static osTimerId_t energy_depletion_timer;
+[[maybe_unused]] static const osTimerAttr_t energy_depletion_timer_attributes = {
+    .name = "energy_depletion_timer"
 };
 
 // Green led pwm duty cycle timer
@@ -115,21 +182,15 @@
     .name = "green_led_pwm_timer"
 };
 
-
-// =================================================================================================
-/* ITC construct declarations */
-// 
-
-// Button press semaphore 
-[[maybe_unused]] static osSemaphoreId_t button_semaphore;
-[[maybe_unused]] static const osSemaphoreAttr_t button_semaphore_attributes = {
-    .name = "button_semaphore"
+// Red led control timer
+[[maybe_unused]] static osTimerId_t red_led_timer;
+[[maybe_unused]] static const osTimerAttr_t red_led_timer_attributes = {
+    .name = "red_led_timer"
 };
 
-// Disruptor energy mutex
-[[maybe_unused]] static osMutexId_t energy_level_mutex;
-[[maybe_unused]] static const osMutexAttr_t energy_level_mutex_attributes = {
-    .name = "energy_level_mutex"
+[[maybe_unused]] static osTimerId_t game_timer;
+[[maybe_unused]] static const osTimerAttr_t game_timer_attributes = {
+    .name = "game_timer"
 };
 
 // Gyro angle mutex
@@ -138,10 +199,16 @@
     .name = "gyro_angle_mutex"
 };
 
-// Disruptor event flag group
-[[maybe_unused]] static osEventFlagsId_t disruptor_event;
-[[maybe_unused]] static const osEventFlagsAttr_t disruptor_event_attributes = {
-    .name = "disruptor_event"
+// Drone position mutex
+[[maybe_unused]] static osMutexId_t drone_position_mutex;
+[[maybe_unused]] static const osMutexAttr_t drone_position_mutex_attributes = {
+    .name = "drone_position_mutex"
+};
+
+// Disruptor energy event flag group
+[[maybe_unused]] static osEventFlagsId_t energy_event;
+[[maybe_unused]] static const osEventFlagsAttr_t energy_event_attributes = {
+    .name = "energy_event"
 };
 
 // Led output event flag group
@@ -150,17 +217,17 @@
     .name = "led_event"
 };
 
+// Button press semaphore 
+[[maybe_unused]] static osSemaphoreId_t button_semaphore;
+[[maybe_unused]] static const osSemaphoreAttr_t button_semaphore_attributes = {
+    .name = "button_semaphore"
+};
+
 void ApplicationInit(void);
-
+void APPLICATION_configure_settings(void);
 void APPLICATION_enable_button_interrupts(void);
-
-// Checks state of button - loads state into 'button_state' variable
 void APPLICATION_sample_button(void);
-
-// Checks speed of gyro rotation and stores in variable 'gyro_rotation'
 void APPLICATION_sample_gyro(void); 
-
-void RunDemoForLCD(void);
 
 // Turn on/off LEDs
 void APPLICATION_activate_green_led(void);
@@ -170,20 +237,31 @@ void APPLICATION_deactivate_red_led(void);
 void APPLICATION_toggle_green_led(void);
 void APPLICATION_toggle_red_led(void);
 
-// Thread function declarations
-void button_task_function(void *arg);
-void disruptor_task_function(void *arg);
+// Map generation functions
+void APPLICATION_create_map(void);
+void APPLICATION_draw_map(void);
+
+// Map interaction functions
+bool APPLICATION_is_over_hole(int32_t xCoor, int32_t yCoor);
+int8_t APPLICATION_is_over_waypoint(int32_t xCoor, int32_t yCoor);
+bool APPLICATION_check_horizontal_wall_collision(int32_t xCoor, int32_t yCoor); // True if drone is touching wall
+bool APPLICATION_check_vertical_wall_collision(int32_t xCoor, int32_t yCoor); // True if drone is touching wall
+bool APPLICATION_check_drone_overlap(int32_t drone_pos, int32_t line_pos);
+
+int32_t APPLICATION_get_board_gravity_ratio(int16_t angle);
+
 void lcd_display_task_function(void *arg);
-void led_output_task_function(void *arg);
+void disruptor_task_function(void *arg);
+void button_task_function(void *arg);
 void gyro_angle_task_function(void *arg);
+void led_output_task_function(void *arg);
+void game_task_function(void *arg);
 
-// Periodically depletes disruptor energy level
-void depletion_timer_callback(void *arg);
-
-// Periodically recharges disruptor energy level
-void recharge_timer_callback(void *arg);
-
-// Manages pwm of green led
+void energy_recharge_timer_callback(void *arg);
+void energy_depletion_timer_callback(void *arg);
 void green_led_pwm_timer_callback(void *arg);
+void red_led_timer_callback(void *arg);
+void game_timer_callback(void *arg);
 
-#endif /* INC_APPLICATIONCODE_H_ */
+
+#endif
